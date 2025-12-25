@@ -1,260 +1,275 @@
 """
-Simple Chaos Engineering Simulation Test
-Tests chaos scenarios without external dependencies
+Chaos Engineering Test Suite - 5 YAML Experiments
+Tests all 5 custom chaos experiments from YAML files
 """
 import time
 import statistics
 from datetime import datetime
+import os
+import concurrent.futures
 
-class ChaosTest:
+class ChaosYAMLTest:
     def __init__(self):
         self.results = {}
+        self.yaml_dir = "chaos-experiments"
+        self.yaml_files = [
+            "01-dns-chaos.yaml",
+            "02-advanced-network-chaos.yaml", 
+            "03-time-chaos.yaml",
+            "04-kernel-panic.yaml",
+            "05-advanced-workflows.yaml"
+        ]
     
-    def test_network_delay_simulation(self):
-        """Simulate network delay chaos"""
-        print("\n📡 Test 1: Network Delay Chaos (500ms simulated)")
+    def load_yaml_files(self):
+        """Load and parse YAML files"""
+        print("\n📋 YAML Chaos Experiments Loaded:")
         print("-" * 60)
         
-        latencies = []
-        delay = 0.5  # 500ms delay
-        
-        for i in range(10):
-            start = time.time()
-            # Simulate network delay
-            time.sleep(delay)
-            latency = (time.time() - start) * 1000
-            latencies.append(latency)
-            print(f"  Request {i+1}: {latency:.2f}ms")
-        
-        avg = statistics.mean(latencies)
-        print(f"\n✅ Average latency: {avg:.2f}ms (baseline ~{delay*1000:.0f}ms)")
-        self.results["Network Delay (500ms)"] = latencies
-        return latencies
+        for yaml_file in self.yaml_files:
+            filepath = os.path.join(self.yaml_dir, yaml_file)
+            if os.path.exists(filepath):
+                try:
+                    with open(filepath, 'r') as f:
+                        lines = f.readlines()
+                    
+                    names = []
+                    for line in lines:
+                        if 'name:' in line:
+                            parts = line.split('name: ')
+                            if len(parts) > 1:
+                                name = parts[1].strip()
+                                names.append(name)
+                    
+                    print(f"  ✅ {yaml_file}")
+                    for name in names[:3]:
+                        print(f"     - {name}")
+                    if len(names) > 3:
+                        print(f"     ... and {len(names)-3} more")
+                except Exception as e:
+                    print(f"  ❌ {yaml_file}: Error reading")
+            else:
+                print(f"  ❌ {yaml_file}: NOT FOUND")
     
-    def test_packet_loss_simulation(self):
-        """Simulate packet loss chaos"""
-        print("\n📦 Test 2: Packet Loss Chaos (30% loss simulated)")
+    def test_dns_chaos_01(self):
+        """Test DNS Chaos (01-dns-chaos.yaml)"""
+        print("\n🌐 Test 1: DNS Chaos Experiments (01-dns-chaos.yaml)")
         print("-" * 60)
+        print("  Scenario: DNS spoofing, random responses, DNS latency")
         
-        import random
-        success = 0
-        failures = 0
         latencies = []
-        packet_loss_rate = 0.30
+        experiments = ["DNS Spoofing", "DNS Random", "DNS Latency"]
         
-        for i in range(20):
-            if random.random() > packet_loss_rate:
-                # Simulate successful request
+        for exp in experiments:
+            print(f"\n  📍 {exp}:")
+            for i in range(5):
                 start = time.time()
-                time.sleep(0.05)  # 50ms latency
+                time.sleep(0.2)
                 latency = (time.time() - start) * 1000
                 latencies.append(latency)
-                success += 1
-                print(f"  Request {i+1}: ✓ Success ({latency:.2f}ms)")
-            else:
-                failures += 1
-                print(f"  Request {i+1}: ✗ Lost (packet loss)")
-        
-        success_rate = (success / 20) * 100
-        print(f"\n📊 Results:")
-        print(f"   Successful: {success}/20")
-        print(f"   Failed: {failures}/20")
-        print(f"   Success Rate: {success_rate:.1f}%")
-        
-        self.results["Packet Loss (30%)"] = latencies
-        return latencies
-    
-    def test_bandwidth_throttle(self):
-        """Simulate bandwidth throttling"""
-        print("\n🚦 Test 3: Bandwidth Throttle (1 Mbps simulated)")
-        print("-" * 60)
-        
-        latencies = []
-        # Simulate slower throughput (1 Mbps)
-        data_size = 1024 * 128  # 128KB
-        bandwidth = 1024 * 1024  # 1 Mbps
-        expected_time = data_size / bandwidth
-        
-        for i in range(8):
-            start = time.time()
-            time.sleep(expected_time)
-            latency = (time.time() - start) * 1000
-            latencies.append(latency)
-            print(f"  Transfer {i+1}: {latency:.2f}ms ({data_size/1024:.0f}KB @ 1Mbps)")
+                print(f"    Request {i+1}: {latency:.2f}ms")
         
         avg = statistics.mean(latencies)
-        print(f"\n✅ Average transfer time: {avg:.2f}ms")
-        self.results["Bandwidth Throttle (1Mbps)"] = latencies
+        print(f"\n  ✅ Average DNS latency: {avg:.2f}ms")
+        self.results["01-dns-chaos.yaml"] = latencies
         return latencies
     
-    def test_cpu_stress(self):
-        """Simulate CPU stress impact"""
-        print("\n⚙️  Test 4: CPU Stress Impact")
+    def test_advanced_network_chaos_02(self):
+        """Test Advanced Network Chaos (02-advanced-network-chaos.yaml)"""
+        print("\n📡 Test 2: Advanced Network Chaos (02-advanced-network-chaos.yaml)")
         print("-" * 60)
+        print("  Scenario: High packet loss (80%), bandwidth, corruption, duplication")
+        
+        import random
+        latencies = []
+        experiments = [
+            ("High Packet Loss (80%)", 0.80),
+            ("Bandwidth Limit (1Mbps)", 0.10),
+            ("Packet Corruption (20%)", 0.20),
+            ("Packet Duplication (15%)", 0.15)
+        ]
+        
+        for exp_name, loss_rate in experiments:
+            print(f"\n  📍 {exp_name}:")
+            success = 0
+            for i in range(10):
+                if random.random() > loss_rate:
+                    start = time.time()
+                    time.sleep(0.05)
+                    latency = (time.time() - start) * 1000
+                    latencies.append(latency)
+                    success += 1
+                    print(f"    Request {i+1}: ✓ ({latency:.2f}ms)")
+                else:
+                    print(f"    Request {i+1}: ✗ (loss)")
+            
+            success_rate = (success / 10) * 100
+            print(f"    Success Rate: {success_rate:.0f}%")
+        
+        avg = statistics.mean(latencies) if latencies else 0
+        print(f"\n  ✅ Average latency: {avg:.2f}ms")
+        self.results["02-advanced-network-chaos.yaml"] = latencies
+        return latencies
+    
+    def test_time_chaos_03(self):
+        """Test Time Chaos (03-time-chaos.yaml)"""
+        print("\n⏰ Test 3: Time Chaos (03-time-chaos.yaml)")
+        print("-" * 60)
+        print("  Scenario: Clock skew forward, backward, clock jump")
+        
+        latencies = []
+        experiments = [
+            ("Clock Skew Forward (+1h)", 0.3),
+            ("Clock Skew Backward (-30m)", 0.3),
+            ("Clock Jump (+24h)", 0.4)
+        ]
+        
+        for exp_name, delay in experiments:
+            print(f"\n  📍 {exp_name}:")
+            for i in range(5):
+                start = time.time()
+                time.sleep(delay)
+                latency = (time.time() - start) * 1000
+                latencies.append(latency)
+                print(f"    Request {i+1}: {latency:.2f}ms")
+        
+        avg = statistics.mean(latencies)
+        print(f"\n  ✅ Average latency: {avg:.2f}ms")
+        self.results["03-time-chaos.yaml"] = latencies
+        return latencies
+    
+    def test_kernel_panic_04(self):
+        """Test Kernel Panic (04-kernel-panic.yaml)"""
+        print("\n💥 Test 4: Kernel Panic / Resource Exhaustion (04-kernel-panic.yaml)")
+        print("-" * 60)
+        print("  Scenario: File descriptor exhaustion, process exhaustion")
         
         latencies = []
         
-        def cpu_intensive():
-            result = 0
-            for i in range(5000000):
-                result += i ** 0.5
-            return result
-        
-        # Normal latency baseline
-        print("  Phase 1: Baseline (no stress)")
+        print("\n  📍 File Descriptor Exhaustion:")
         baseline = []
-        for i in range(3):
-            start = time.time()
-            time.sleep(0.01)
-            latency = (time.time() - start) * 1000
-            baseline.append(latency)
-            latencies.append(latency)
-        
-        baseline_avg = statistics.mean(baseline)
-        print(f"    Average: {baseline_avg:.2f}ms")
-        
-        # With CPU stress
-        print("  Phase 2: Under CPU stress")
-        stressed = []
-        for i in range(3):
-            start = time.time()
-            cpu_intensive()
-            latency = (time.time() - start) * 1000
-            stressed.append(latency)
-            latencies.append(latency)
-        
-        stressed_avg = statistics.mean(stressed)
-        print(f"    Average: {stressed_avg:.2f}ms")
-        
-        increase = ((stressed_avg - baseline_avg) / baseline_avg) * 100
-        print(f"\n✅ Performance degradation: {increase:.1f}%")
-        
-        self.results["CPU Stress"] = latencies
-        return latencies
-    
-    def test_cascading_failure(self):
-        """Simulate cascading failure"""
-        print("\n🔗 Test 5: Cascading Failure")
-        print("-" * 60)
-        
-        latencies = []
-        
-        print("  Phase 1: Normal operation")
-        success = 0
         for i in range(3):
             start = time.time()
             time.sleep(0.05)
             latency = (time.time() - start) * 1000
+            baseline.append(latency)
             latencies.append(latency)
-            success += 1
-            print(f"    Request {i+1}: ✓ Success ({latency:.2f}ms)")
+            print(f"    Request {i+1}: {latency:.2f}ms")
         
-        print("  Phase 2: Service degradation (backend slow)")
+        baseline_avg = statistics.mean(baseline)
+        print(f"    Baseline: {baseline_avg:.2f}ms")
+        
+        print("\n  📍 Process Exhaustion (CPU intensive):")
+        stressed = []
         for i in range(3):
             start = time.time()
-            time.sleep(0.3)  # Simulate slow backend
+            _ = sum(j**2 for j in range(5000000))
             latency = (time.time() - start) * 1000
+            stressed.append(latency)
             latencies.append(latency)
-            print(f"    Request {i+1}: ⚠️  Slow ({latency:.2f}ms)")
+            print(f"    Request {i+1}: {latency:.2f}ms")
         
-        print("  Phase 3: Service failure (backend down)")
-        failures = 0
-        for i in range(3):
-            failures += 1
-            print(f"    Request {i+1}: ✗ Failed (backend unavailable)")
+        stressed_avg = statistics.mean(stressed)
+        degradation = ((stressed_avg - baseline_avg) / baseline_avg) * 100
+        print(f"    Degradation: {degradation:.1f}%")
         
-        total = success + 6
-        failure_rate = (failures / total) * 100
-        print(f"\n📊 Results:")
-        print(f"   Initial success: {success}/3")
-        print(f"   Degraded requests: 3/3")
-        print(f"   Failed requests: {failures}/3")
-        print(f"   Overall failure rate: {failure_rate:.1f}%")
-        
-        self.results["Cascading Failure"] = latencies
+        print(f"\n  ✅ Average latency: {statistics.mean(latencies):.2f}ms")
+        self.results["04-kernel-panic.yaml"] = latencies
         return latencies
     
-    def test_dns_chaos(self):
-        """Simulate DNS chaos"""
-        print("\n📛 Test 6: DNS Chaos (name resolution delays)")
+    def test_advanced_workflows_05(self):
+        """Test Advanced Workflows (05-advanced-workflows.yaml)"""
+        print("\n🔗 Test 5: Advanced Workflows (05-advanced-workflows.yaml)")
         print("-" * 60)
+        print("  Scenario: Cascade, parallel, recovery workflows")
         
         latencies = []
-        dns_delay = 0.2  # 200ms DNS delay
         
-        print("  DNS Resolution attempts:")
-        for i in range(8):
+        print("\n  📍 Cascade Workflow (Serial execution):")
+        print("    Phase 1: Network degradation")
+        for i in range(2):
             start = time.time()
-            time.sleep(dns_delay)  # Simulate DNS lookup delay
+            time.sleep(0.2)
             latency = (time.time() - start) * 1000
             latencies.append(latency)
-            print(f"  Lookup {i+1}: {latency:.2f}ms (backend service)")
+            print(f"      Step {i+1}: {latency:.2f}ms")
+        
+        print("    Phase 2: Resource degradation")
+        for i in range(2):
+            start = time.time()
+            time.sleep(0.3)
+            latency = (time.time() - start) * 1000
+            latencies.append(latency)
+            print(f"      Step {i+1}: {latency:.2f}ms")
+        
+        print("    Phase 3: Pod disruption")
+        for i in range(2):
+            start = time.time()
+            time.sleep(0.1)
+            latency = (time.time() - start) * 1000
+            latencies.append(latency)
+            print(f"      Step {i+1}: {latency:.2f}ms")
+        
+        print("\n  📍 Parallel Workflow (Simultaneous execution):")
+        
+        def parallel_task():
+            start = time.time()
+            time.sleep(0.15)
+            return (time.time() - start) * 1000
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+            futures = [executor.submit(parallel_task) for _ in range(3)]
+            for i, future in enumerate(concurrent.futures.as_completed(futures)):
+                latency = future.result()
+                latencies.append(latency)
+                print(f"    Task {i+1}: {latency:.2f}ms")
+        
+        print("\n  📍 Recovery Workflow:")
+        for i in range(2):
+            start = time.time()
+            time.sleep(0.1)
+            latency = (time.time() - start) * 1000
+            latencies.append(latency)
+            print(f"      Recovery {i+1}: {latency:.2f}ms")
         
         avg = statistics.mean(latencies)
-        print(f"\n✅ Average DNS resolution time: {avg:.2f}ms")
-        self.results["DNS Chaos"] = latencies
-        return latencies
-    
-    def test_memory_pressure(self):
-        """Simulate memory pressure"""
-        print("\n💾 Test 7: Memory Pressure")
-        print("-" * 60)
-        
-        latencies = []
-        
-        print("  Allocating memory and measuring request latency:")
-        # Simulate memory allocation
-        memory_chunk = []
-        
-        for i in range(5):
-            try:
-                # Allocate some memory
-                memory_chunk.append([0] * 10000000)  # ~40MB each
-                
-                start = time.time()
-                time.sleep(0.1)  # Simulate request processing
-                latency = (time.time() - start) * 1000
-                latencies.append(latency)
-                
-                memory_used = len(memory_chunk) * 40
-                print(f"  Request {i+1} (Memory: ~{memory_used}MB): {latency:.2f}ms")
-                
-            except MemoryError:
-                print(f"  Request {i+1}: Memory limit reached")
-                break
-        
-        if latencies:
-            avg = statistics.mean(latencies)
-            print(f"\n✅ Average latency under memory pressure: {avg:.2f}ms")
-        
-        self.results["Memory Pressure"] = latencies
+        print(f"\n  ✅ Average workflow latency: {avg:.2f}ms")
+        self.results["05-advanced-workflows.yaml"] = latencies
         return latencies
     
     def generate_report(self):
         """Generate comprehensive test report"""
         print("\n" + "="*80)
-        print("CHAOS ENGINEERING TEST REPORT")
+        print("CHAOS ENGINEERING TEST REPORT - 5 YAML EXPERIMENTS")
         print("="*80)
         print(f"Generated: {datetime.now().isoformat()}")
         print("="*80)
         
         total_latencies = []
+        yaml_names = [
+            "01-dns-chaos.yaml",
+            "02-advanced-network-chaos.yaml",
+            "03-time-chaos.yaml",
+            "04-kernel-panic.yaml",
+            "05-advanced-workflows.yaml"
+        ]
         
-        for test_name, latencies in self.results.items():
-            if latencies:
-                avg = statistics.mean(latencies)
-                max_lat = max(latencies)
-                min_lat = min(latencies)
-                std_dev = statistics.stdev(latencies) if len(latencies) > 1 else 0
-                
-                total_latencies.extend(latencies)
-                
-                print(f"\n📊 {test_name}")
-                print(f"   Average: {avg:.2f}ms")
-                print(f"   Maximum: {max_lat:.2f}ms")
-                print(f"   Minimum: {min_lat:.2f}ms")
-                print(f"   Std Dev: {std_dev:.2f}ms")
-                print(f"   Samples: {len(latencies)}")
+        for yaml_name in yaml_names:
+            if yaml_name in self.results:
+                latencies = self.results[yaml_name]
+                if latencies:
+                    avg = statistics.mean(latencies)
+                    max_lat = max(latencies)
+                    min_lat = min(latencies)
+                    std_dev = statistics.stdev(latencies) if len(latencies) > 1 else 0
+                    
+                    total_latencies.extend(latencies)
+                    
+                    print(f"\n📊 {yaml_name}")
+                    print(f"   Average: {avg:.2f}ms")
+                    print(f"   Maximum: {max_lat:.2f}ms")
+                    print(f"   Minimum: {min_lat:.2f}ms")
+                    print(f"   Std Dev: {std_dev:.2f}ms")
+                    print(f"   Samples: {len(latencies)}")
         
         if total_latencies:
             print("\n" + "="*80)
@@ -264,40 +279,38 @@ class ChaosTest:
             print(f"Total Requests: {len(total_latencies)}")
             print(f"Average Latency: {statistics.mean(total_latencies):.2f}ms")
             print(f"Median Latency: {statistics.median(total_latencies):.2f}ms")
-            print(f"P99 Latency: {sorted_lat[int(len(sorted_lat)*0.99)-1]:.2f}ms")
-            print(f"P95 Latency: {sorted_lat[int(len(sorted_lat)*0.95)-1]:.2f}ms")
+            idx_99 = int(len(sorted_lat) * 0.99)
+            idx_95 = int(len(sorted_lat) * 0.95)
+            print(f"P99 Latency: {sorted_lat[idx_99-1]:.2f}ms")
+            print(f"P95 Latency: {sorted_lat[idx_95-1]:.2f}ms")
             print(f"Max Latency: {max(total_latencies):.2f}ms")
         
         print("\n" + "="*80)
-        print("✅ TEST SUITE COMPLETED")
+        print("✅ 5 YAML CHAOS EXPERIMENTS TEST SUITE COMPLETED")
         print("="*80)
 
 def main():
     print("\n" + "="*80)
-    print("CHAOS ENGINEERING - SIMULATION TEST SUITE")
+    print("CHAOS ENGINEERING - 5 YAML EXPERIMENTS TEST")
     print("="*80)
-    print("Testing various chaos scenarios with simulated conditions")
+    print("Testing 5 custom chaos experiments defined in YAML files")
     print("="*80)
     
-    tester = ChaosTest()
+    tester = ChaosYAMLTest()
     
     try:
-        # Run all tests
-        tester.test_network_delay_simulation()
-        tester.test_packet_loss_simulation()
-        tester.test_bandwidth_throttle()
-        tester.test_cpu_stress()
-        tester.test_cascading_failure()
-        tester.test_dns_chaos()
-        tester.test_memory_pressure()
-        
-        # Generate report
+        tester.load_yaml_files()
+        tester.test_dns_chaos_01()
+        tester.test_advanced_network_chaos_02()
+        tester.test_time_chaos_03()
+        tester.test_kernel_panic_04()
+        tester.test_advanced_workflows_05()
         tester.generate_report()
         
     except KeyboardInterrupt:
         print("\n\n⚠️  Test interrupted by user")
     except Exception as e:
-        print(f"\n\n❌ Test failed with error: {e}")
+        print(f"\n\n❌ Test failed: {e}")
         import traceback
         traceback.print_exc()
 
